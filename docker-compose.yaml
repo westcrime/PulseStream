@@ -3,41 +3,113 @@ networks:
     driver: bridge
 
 services:
+  producer-1:
+    build:
+      context: .
+      dockerfile: services/producer/Dockerfile
+    environment:
+      - KAFKA_HOST=localhost
+      - KAFKA_PORT=29092
+      - KAFKA_TOPIC=topic
+      - KAFKA_GROUP_ID=group
+      - POSTGRES_HOST=localhost
+      - POSTGRES_PORT=5432
+      - POSTGRES_USERNAME=username
+      - POSTGRES_PASSWORD=password
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - kafka
+
+  producer-2:
+    build:
+      context: .
+      dockerfile: services/producer/Dockerfile
+    environment:
+      - KAFKA_HOST=localhost
+      - KAFKA_PORT=29092
+      - KAFKA_TOPIC=topic
+      - KAFKA_GROUP_ID=group
+      - POSTGRES_HOST=localhost
+      - POSTGRES_PORT=5432
+      - POSTGRES_USERNAME=username
+      - POSTGRES_PASSWORD=password
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - kafka
+
+  consumer-1:
+    build:
+      context: .
+      dockerfile: services/consumer/Dockerfile
+    environment:
+      - KAFKA_HOST=localhost
+      - KAFKA_PORT=29092
+      - KAFKA_TOPIC=topic
+      - KAFKA_GROUP_ID=group
+      - POSTGRES_HOST=localhost
+      - POSTGRES_PORT=5432
+      - POSTGRES_USERNAME=username
+      - POSTGRES_PASSWORD=password
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - kafka
+
+  consumer-2:
+    build:
+      context: .
+      dockerfile: services/consumer/Dockerfile
+    environment:
+      - KAFKA_HOST=localhost
+      - KAFKA_PORT=29092
+      - KAFKA_TOPIC=topic
+      - KAFKA_GROUP_ID=group
+      - POSTGRES_HOST=localhost
+      - POSTGRES_PORT=5432
+      - POSTGRES_USERNAME=username
+      - POSTGRES_PASSWORD=password
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - kafka
+
   postgres:
     image: postgres:18
     volumes:
       - pgdata:/var/lib/postgresql
     ports:
-      - 5432:5432
+      - "5432:5432"
     environment:
       POSTGRES_USER: username
       POSTGRES_PASSWORD: password
       POSTGRES_DB: pulse_stream
+    networks:
+      - kafka-net
 
   kafka:
     image: confluentinc/cp-kafka:7.8.0
     hostname: kafka
     container_name: kafka
     ports:
-      - "9092:9092"
-      - "9093:9093"
+      - "29092:29092"
     environment:
       KAFKA_NODE_ID: 1
-      KAFKA_BROKER_ID: 1
       KAFKA_PROCESS_ROLES: 'broker,controller'
       KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
-      KAFKA_LISTENERS: 'PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093,EXTERNAL://0.0.0.0:29092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       CLUSTER_ID: 'EmptNWtoR4GGWx-BH6nGLQ'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_DEFAULT_REPLICATION_FACTOR: 1
       KAFKA_MIN_INSYNC_REPLICAS: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     volumes:
-      - ./kafka/data:/var/lib/kafka/data
+      - kafka-data:/var/lib/kafka/data
     networks:
       - kafka-net
 
@@ -56,3 +128,4 @@ services:
 
 volumes:
   pgdata:
+  kafka-data:
