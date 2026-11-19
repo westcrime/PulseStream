@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	kafkago "github.com/segmentio/kafka-go"
 	"github.com/westcrime77/PulseStream/pkg/config"
 	"github.com/westcrime77/PulseStream/pkg/kafka"
 )
@@ -36,14 +37,19 @@ func main() {
 			log.Printf("failed to close kafka writer: %v", err)
 		}
 	}()
-	writeMessages(ctx, kafkaWriter, 1000)
+	err = writeMessages(ctx, kafkaWriter, 1000)
+	if err != nil {
+		log.Fatalf("failed to produce messages: %v", err)
+	}
 }
 
-func writeMessages(ctx context.Context, writer *kafka.Writer, number int64) {
+func writeMessages(ctx context.Context, writer *kafka.Writer, number int64) error {
+	messages := make([]kafkago.Message, number)
 	for i := range number {
-		_ = writer.Write(ctx, kafka.Message{
-			Value: fmt.Sprintf("value%d", i),
-			Key:   fmt.Sprintf("key%d", i),
+		messages = append(messages, kafkago.Message{
+			Value: []byte(fmt.Sprintf("value%d", i)),
+			Key:   []byte(fmt.Sprintf("key%d", i)),
 		})
 	}
+	return writer.Write(ctx, messages)
 }

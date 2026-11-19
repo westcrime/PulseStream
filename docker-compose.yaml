@@ -3,77 +3,77 @@ networks:
     driver: bridge
 
 services:
-  producer-1:
-    build:
-      context: .
-      dockerfile: services/producer/Dockerfile
-    environment:
-      - KAFKA_HOST=localhost
-      - KAFKA_PORT=29092
-      - KAFKA_TOPIC=topic
-      - KAFKA_GROUP_ID=group
-      - POSTGRES_HOST=localhost
-      - POSTGRES_PORT=5432
-      - POSTGRES_USERNAME=username
-      - POSTGRES_PASSWORD=password
-    restart: unless-stopped
-    depends_on:
-      - postgres
-      - kafka
-
-  producer-2:
-    build:
-      context: .
-      dockerfile: services/producer/Dockerfile
-    environment:
-      - KAFKA_HOST=localhost
-      - KAFKA_PORT=29092
-      - KAFKA_TOPIC=topic
-      - KAFKA_GROUP_ID=group
-      - POSTGRES_HOST=localhost
-      - POSTGRES_PORT=5432
-      - POSTGRES_USERNAME=username
-      - POSTGRES_PASSWORD=password
-    restart: unless-stopped
-    depends_on:
-      - postgres
-      - kafka
-
-  consumer-1:
-    build:
-      context: .
-      dockerfile: services/consumer/Dockerfile
-    environment:
-      - KAFKA_HOST=localhost
-      - KAFKA_PORT=29092
-      - KAFKA_TOPIC=topic
-      - KAFKA_GROUP_ID=group
-      - POSTGRES_HOST=localhost
-      - POSTGRES_PORT=5432
-      - POSTGRES_USERNAME=username
-      - POSTGRES_PASSWORD=password
-    restart: unless-stopped
-    depends_on:
-      - postgres
-      - kafka
-
-  consumer-2:
-    build:
-      context: .
-      dockerfile: services/consumer/Dockerfile
-    environment:
-      - KAFKA_HOST=localhost
-      - KAFKA_PORT=29092
-      - KAFKA_TOPIC=topic
-      - KAFKA_GROUP_ID=group
-      - POSTGRES_HOST=localhost
-      - POSTGRES_PORT=5432
-      - POSTGRES_USERNAME=username
-      - POSTGRES_PASSWORD=password
-    restart: unless-stopped
-    depends_on:
-      - postgres
-      - kafka
+#  producer-1:
+#    build:
+#      context: .
+#      dockerfile: services/producer/Dockerfile
+#    environment:
+#      - KAFKA_HOST=localhost
+#      - KAFKA_PORT=29092
+#      - KAFKA_TOPIC=topic
+#      - KAFKA_GROUP_ID=group
+#      - POSTGRES_HOST=localhost
+#      - POSTGRES_PORT=5432
+#      - POSTGRES_USERNAME=username
+#      - POSTGRES_PASSWORD=password
+#    restart: unless-stopped
+#    depends_on:
+#      - postgres
+#      - kafka
+#
+#  producer-2:
+#    build:
+#      context: .
+#      dockerfile: services/producer/Dockerfile
+#    environment:
+#      - KAFKA_HOST=localhost
+#      - KAFKA_PORT=29092
+#      - KAFKA_TOPIC=topic
+#      - KAFKA_GROUP_ID=group
+#      - POSTGRES_HOST=localhost
+#      - POSTGRES_PORT=5432
+#      - POSTGRES_USERNAME=username
+#      - POSTGRES_PASSWORD=password
+#    restart: unless-stopped
+#    depends_on:
+#      - postgres
+#      - kafka
+#
+#  consumer-1:
+#    build:
+#      context: .
+#      dockerfile: services/consumer/Dockerfile
+#    environment:
+#      - KAFKA_HOST=localhost
+#      - KAFKA_PORT=29092
+#      - KAFKA_TOPIC=topic
+#      - KAFKA_GROUP_ID=group
+#      - POSTGRES_HOST=localhost
+#      - POSTGRES_PORT=5432
+#      - POSTGRES_USERNAME=username
+#      - POSTGRES_PASSWORD=password
+#    restart: unless-stopped
+#    depends_on:
+#      - postgres
+#      - kafka
+#
+#  consumer-2:
+#    build:
+#      context: .
+#      dockerfile: services/consumer/Dockerfile
+#    environment:
+#      - KAFKA_HOST=localhost
+#      - KAFKA_PORT=29092
+#      - KAFKA_TOPIC=topic
+#      - KAFKA_GROUP_ID=group
+#      - POSTGRES_HOST=localhost
+#      - POSTGRES_PORT=5432
+#      - POSTGRES_USERNAME=username
+#      - POSTGRES_PASSWORD=password
+#    restart: unless-stopped
+#    depends_on:
+#      - postgres
+#      - kafka
 
   postgres:
     image: postgres:18

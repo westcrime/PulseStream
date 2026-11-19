@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
+	"os"
+	"os/signal"
+	"syscall"
 
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/westcrime77/PulseStream/pkg/config"
@@ -16,7 +18,8 @@ func main() {
 	defer func() {
 		fmt.Println("Consumer finished")
 	}()
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	if err := config.LoadDotEnv(); err != nil {
 		log.Fatalf("failed to load env file: %v", err)
 	}
@@ -38,15 +41,17 @@ func main() {
 			log.Printf("failed to close kafka reader: %v", err)
 		}
 	}()
-	deadlineCtx, _ := context.WithDeadline(ctx,
-		time.Now().Add(5*time.Second))
+	var message kafkago.Message
 	for {
-		var msg kafkago.Message
-		msg, err = kafkaReader.Read(deadlineCtx)
+		message, err = kafkaReader.Fetch(ctx)
 		if err != nil {
 			log.Fatalf("failed to read kafka message: %v", err)
 		}
 		fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n",
-			msg.Topic, msg.Partition, msg.Offset, string(msg.Key), string(msg.Value))
+			message.Topic, message.Partition, message.Offset, string(message.Key), string(message.Value))
+		err = kafkaReader.Commit(ctx, message)
+		if err != nil {
+			log.Fatalf("failed to commit kafka message: %v", err)
+		}
 	}
 }
