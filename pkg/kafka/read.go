@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/segmentio/kafka-go"
+	"go.uber.org/fx"
 
 	"github.com/westcrime77/PulseStream/pkg/config"
 )
@@ -15,8 +16,8 @@ type Reader struct {
 	reader *kafka.Reader
 }
 
-func NewReader(cfg config.Kafka) *Reader {
-	return &Reader{
+func NewReader(lc fx.Lifecycle, cfg config.Kafka) *Reader {
+	r := &Reader{
 		reader: kafka.NewReader(kafka.ReaderConfig{
 			Brokers:  []string{fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)},
 			GroupID:  cfg.GroupID,
@@ -24,6 +25,14 @@ func NewReader(cfg config.Kafka) *Reader {
 			MaxBytes: MaxBytes,
 		}),
 	}
+
+	lc.Append(fx.Hook{
+		OnStop: func(ctx context.Context) error {
+			return r.reader.Close()
+		},
+	})
+
+	return r
 }
 
 func (r *Reader) Fetch(ctx context.Context) (kafka.Message, error) {
