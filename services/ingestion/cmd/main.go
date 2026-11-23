@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	nethttp "net/http"
+	"os"
 
 	"github.com/westcrime77/PulseStream/pkg/http"
 	"github.com/westcrime77/PulseStream/pkg/kafka"
@@ -13,6 +14,8 @@ import (
 )
 
 func main() {
+	wd, _ := os.Getwd()
+	log.Println("working dir:", wd)
 	if err := config.LoadDotEnv(); err != nil {
 		log.Fatalf("failed to load env file: %v", err)
 	}

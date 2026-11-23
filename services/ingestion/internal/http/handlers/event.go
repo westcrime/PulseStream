@@ -6,15 +6,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/westcrime77/PulseStream/pkg/kafka"
 	kafkamodels "github.com/westcrime77/PulseStream/pkg/kafka/models"
 	"github.com/westcrime77/PulseStream/services/ingestion/internal/http/models"
+	"github.com/westcrime77/PulseStream/services/ingestion/internal/metrics"
 )
 
 func (h *Handler) postEvents(w http.ResponseWriter, r *http.Request) {
+	timer := prometheus.NewTimer(metrics.PublishDuration)
+	defer timer.ObserveDuration()
+
+	ctx := r.Context()
+
 	var events []models.Event
 	err := json.NewDecoder(r.Body).Decode(&events)
 	if err != nil {
@@ -35,13 +41,14 @@ func (h *Handler) postEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 10*time.Second)
-	go func() {
-		defer cancel()
-		if err := publishEvents(ctx, h.writer, events); err != nil {
-			h.log.Errorf("publish events: %v", err)
-		}
-	}()
+	for _, e := range events {
+		metrics.EventsReceived.WithLabelValues(string(e.Type)).Inc()
+	}
+
+	if err = publishEvents(ctx, h.writer, events); err != nil {
+		metrics.PublishErrors.Inc()
+		h.log.Errorf("publish events: %v", err)
+	}
 
 	w.WriteHeader(http.StatusAccepted)
 }

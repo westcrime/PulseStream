@@ -3,6 +3,55 @@ networks:
     driver: bridge
 
 services:
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    environment:
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 9092
+      KAFKA_TOPIC: telemetry
+      KAFKA_GROUP_ID: group
+      HTTP_HOST: 0.0.0.0
+      HTTP_PORT: 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka
+    networks:
+      - kafka-net
+
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./services/ingestion/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - ingestion
+    networks:
+      - kafka-net
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./services/ingestion/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - kafka-net
+
   postgres:
     image: postgres:18
     volumes:
@@ -57,3 +106,5 @@ services:
 volumes:
   pgdata:
   kafka-data:
+  grafana-data:
+  prometheus-data:

@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/westcrime77/PulseStream/pkg/kafka"
 )
 
@@ -18,9 +19,10 @@ type Handler struct {
 	log    Logger
 }
 
-func New(writer *kafka.Writer) *Handler {
+func New(writer *kafka.Writer, log Logger) *Handler {
 	return &Handler{
 		writer: writer,
+		log:    log,
 	}
 }
 
@@ -33,6 +35,7 @@ func (h *Handler) Routes() http.Handler {
 	r.Use(middleware.Timeout(10 * time.Second))
 
 	r.Get("/health", h.health)
+	r.Handle("/metrics", promhttp.Handler())
 	r.Post("/events", h.postEvents)
 
 	return r
