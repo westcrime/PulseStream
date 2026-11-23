@@ -7,6 +7,8 @@ import (
 
 	"github.com/westcrime77/PulseStream/pkg/http"
 	"github.com/westcrime77/PulseStream/pkg/kafka"
+	"github.com/westcrime77/PulseStream/pkg/logger"
+	"github.com/westcrime77/PulseStream/services/ingestion/internal/batcher"
 	"github.com/westcrime77/PulseStream/services/ingestion/internal/http/handlers"
 	"go.uber.org/fx"
 
@@ -35,11 +37,14 @@ func main() {
 
 		fx.Provide(
 			fx.Annotate(
-				func() *log.Logger { return log.Default() },
+				func() logger.StdLogger { return logger.StdLogger{Logger: log.Default()} },
 				fx.As(new(http.Logger)),
+				fx.As(new(batcher.Logger)),
+				fx.As(new(handlers.Logger)),
 			),
 
 			kafka.NewWriter,
+			batcher.New,
 			handlers.New,
 
 			fx.Annotate(

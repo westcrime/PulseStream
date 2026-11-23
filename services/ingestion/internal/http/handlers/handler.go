@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/westcrime77/PulseStream/pkg/kafka"
+	"github.com/westcrime77/PulseStream/services/ingestion/internal/batcher"
 )
 
 type Logger interface {
@@ -15,14 +15,14 @@ type Logger interface {
 }
 
 type Handler struct {
-	writer *kafka.Writer
-	log    Logger
+	log     Logger
+	batcher *batcher.Batcher
 }
 
-func New(writer *kafka.Writer, log Logger) *Handler {
+func New(batcher *batcher.Batcher, log Logger) *Handler {
 	return &Handler{
-		writer: writer,
-		log:    log,
+		log:     log,
+		batcher: batcher,
 	}
 }
 

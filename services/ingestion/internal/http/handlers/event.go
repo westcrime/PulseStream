@@ -1,16 +1,12 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
-	kafkago "github.com/segmentio/kafka-go"
-	"github.com/westcrime77/PulseStream/pkg/kafka"
-	kafkamodels "github.com/westcrime77/PulseStream/pkg/kafka/models"
 	"github.com/westcrime77/PulseStream/services/ingestion/internal/http/models"
 	"github.com/westcrime77/PulseStream/services/ingestion/internal/metrics"
 )
@@ -18,8 +14,6 @@ import (
 func (h *Handler) postEvents(w http.ResponseWriter, r *http.Request) {
 	timer := prometheus.NewTimer(metrics.PublishDuration)
 	defer timer.ObserveDuration()
-
-	ctx := r.Context()
 
 	var events []models.Event
 	err := json.NewDecoder(r.Body).Decode(&events)
@@ -45,39 +39,13 @@ func (h *Handler) postEvents(w http.ResponseWriter, r *http.Request) {
 		metrics.EventsReceived.WithLabelValues(string(e.Type)).Inc()
 	}
 
-	if err = publishEvents(ctx, h.writer, events); err != nil {
-		metrics.PublishErrors.Inc()
-		h.log.Errorf("publish events: %v", err)
-	}
-
-	w.WriteHeader(http.StatusAccepted)
-}
-
-func publishEvents(ctx context.Context, writer *kafka.Writer, events []models.Event) error {
-	kafkaMessages, err := mapEvents(events)
-	if err != nil {
-		return err
-	}
-	return writer.Write(ctx, kafkaMessages)
-}
-
-func mapEvents(events []models.Event) ([]kafkago.Message, error) {
-	result := make([]kafkago.Message, 0, len(events))
-	for _, event := range events {
-		raw, err := json.Marshal(kafkamodels.TelemetryEvent{
-			DeviceID: event.DeviceID,
-			Type:     string(event.Type),
-			Value:    event.Value,
-		})
-		if err != nil {
-			return nil, err
+	if rest := h.batcher.Add(events...); len(rest) > 0 {
+		for range rest {
+			metrics.EventsPublishedWithoutBatcher.Inc()
 		}
-		result = append(result, kafkago.Message{
-			Key:   nil,
-			Value: raw,
-		})
+		h.batcher.PublishEvents(rest)
 	}
-	return result, nil
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func validateEvents(events []models.Event) error {

@@ -11,6 +11,11 @@ var (
 		Help: "Amount of pulse stream events received by type",
 	}, []string{"type"})
 
+	EventsPublishedWithoutBatcher = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "pulsestream_events_published_without_batcher_total",
+		Help: "Amount of pulse stream events published without batcher due to buffer overflow",
+	})
+
 	PublishErrors = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "pulsestream_publish_errors_total",
 		Help: "Errors encountered while publishing events",

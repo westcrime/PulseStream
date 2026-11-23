@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/westcrime77/PulseStream/pkg/config"
@@ -19,6 +20,7 @@ func NewWriter(lc fx.Lifecycle, cfg config.Kafka) *Writer {
 			Addr:                   kafka.TCP(fmt.Sprintf("%s:%s", cfg.Host, cfg.Port)),
 			Topic:                  cfg.Topic,
 			AllowAutoTopicCreation: true,
+			BatchTimeout:           500 * time.Millisecond,
 		},
 	}
 
